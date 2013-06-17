@@ -1,0 +1,2 @@
+@python pre.py
+pause

@@ -50,7 +50,7 @@ def init(experiment):
 	#Then restart the remote, connect to it and start the main robot code running
 	for hostname in robots:
 		pre[hostname].start()
-	time.sleep(2)
+	time.sleep(3)
 
 	for hostname in robots:
 		remote[hostname] = Pyro4.Proxy("PYRONAME:"+hostname+".remote")
@@ -75,20 +75,16 @@ class CameraPoll(threading.Thread):
 			data = self.conn.recv(self.bufsize)
 			if len(data) == 10:
 				packet_id, packet_size, car_id, state = unpack("!HHLH", data)
-				print "rx packet:", car_id, state
+				#print "rx packet:", car_id, state
 				robot[robots[0]].robot.LED(state)
 
 				time.sleep(0.1)
-				#packet = pack("!HHLH", 1, 6, car_id, state)
 				packet = pack("!HHLH", 1, 10, 3, state)
 				self.conn.send(packet)
-				#packet = pack("!LH", car_id, state)
-				#self.conn.send(packet)
 			if len(data) > 10:
 				try:
 					self.packet_id, self.packet_size, self.frame, self.numcars, self.car_id, self.x, self.y, self.hdg = unpack("!HHlHLfff", data)
 					self.new = True
-					#print self.x, self.y, self.hdg
 				except:
 					self.new = False
 			time.sleep(0.05)
@@ -116,9 +112,9 @@ class Camera():
 
 	def getxy(self):
 		if (self.pollthread.new):
-			return [self.pollthread.x, self.pollthread.y, self.pollthread.hdg]
+			return [self.pollthread.x, self.pollthread.y, self.pollthread.hdg, True]
 		else:
-			return [0, 0, 0]
+			return [0, 0, 0, False]
 
 
 	def disconnect(self):
@@ -187,3 +183,46 @@ def vw2lr(vt, omega):
 	vr = int(vt + 129*omega)
 
 	return (vl, vr)
+
+class Plot():
+	def __init__(self):
+		self.x0 = 80; self.y0 = 20
+		self.xs = 500; self.ys = 500
+		self.screen = pygame.display.set_mode((600,600))
+		pygame.font.init()
+		self.font = pygame.font.SysFont("Arial", 14)
+
+	def axes(self, x,y):
+		(self.xmin, self.xmax) = x
+		(self.ymin, self.ymax) = y
+
+		self.screen.fill((255,255,255))
+		pygame.draw.rect(self.screen, 0, (self.x0,self.y0,self.xs+1,self.ys+1), 1)
+
+		for i in range(10+1):
+			xl = self.x0 + self.xs*i/10
+			pygame.draw.line(self.screen, 0, (xl, self.y0+self.ys), (xl, self.y0+self.ys+10))
+			
+			tick = str(self.xmin + (self.xmax-self.xmin)*i/10)
+			size = self.font.size(tick)
+			label = self.font.render(tick, 1, (0,0,0))
+			self.screen.blit(label, (xl-size[0]/2, self.y0+self.ys+12))
+
+			yl = self.y0 + self.ys*i/10
+			pygame.draw.line(self.screen, 0, (self.x0-10, yl), (self.x0, yl))
+			#print xmin + (xmax-xmin)*i/10
+
+			tick = str(self.ymin + (self.ymax-self.ymin)*i/10)
+			size = self.font.size(tick)
+			label = self.font.render(tick, 1, (0,0,0))
+			self.screen.blit(label, (self.x0-size[0]-12, yl-size[1]/2))
+
+		pygame.display.flip()
+
+	def line(self, x1, y1, x2, y2, colour):
+		x1m = self.x0 + self.xs*(x1-self.xmin)/(self.xmax-self.xmin)
+		x2m = self.x0 + self.xs*(x2-self.xmin)/(self.xmax-self.xmin)
+		y1m = self.y0 - self.ys*(y1-self.ymin)/(self.ymax-self.ymin) + self.ys
+		y2m = self.y0 - self.ys*(y2-self.ymin)/(self.ymax-self.ymin) + self.ys
+		pygame.draw.aaline(self.screen, pygame.Color(colour), (x1m, y1m), (x2m, y2m))
+		pygame.display.flip()

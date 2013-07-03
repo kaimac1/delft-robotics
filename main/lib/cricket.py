@@ -48,14 +48,15 @@ def cricketScan():
 	cricketList = []
 	ports = portScan()
 
-	print("Identifying crickets:")
+	print("Identifying crickets:"),
 	for port in ports:
 		sid = cricketIdentify(port)
 		if sid != "": 
 			#We have a cricket
-			print "COM" + str(port+1) + " = " + sid
+			print "COM" + str(port+1) + " = " + sid + ", ",
 			c = Cricket(id=sid, port=port)
 			cricketList.append(c)
+	print
 
 	return cricketList
 

@@ -1,6 +1,6 @@
 from numpy.matlib import *
 from time import time
-# from matplotlib import pyplot 
+#from matplotlib import pyplot 
 
 #Nonlinear discrete-time system with non-additive noise on the inputs:
 #	x(k+1) = f(x(k), u(k) + q(k))
@@ -79,10 +79,19 @@ class EKFModel():
 	def sens(self, x):
 		return array([x[0]])
 
+dt = 0.1
+
+def constant_velocity(x, u):
+	return array([x[0] + u[0]*dt/2*(cos(x[2]+u[1]*dt) + cos(x[2])),
+			  	  x[1] - u[0]*dt/2*(sin(x[2]+u[1]*dt) + sin(x[2])),
+			  	  x[2] + u[1]*dt]).T
+
 # m = EKFModel(3)
-# m.dt = 0.01
-# m.f = m.unicycle
+# m.dt = 0.1
+# m.f = constant_velocity
 # m.h = m.sens
+# m.Q = eye(2)*4
+# print m.Q
 # m.x = array([0,0,0]).T
 # m.u = array([0,0])
 # N = int(6.28/m.dt)
@@ -96,8 +105,8 @@ class EKFModel():
 # pyplot.plot(data[0,:].T, data[1,:].T, 'r')
 # pyplot.show()
 
-#print m.P
-#m.updateSerial(0, 0)
-#print m.x
-#print m.P
+# print m.P
+# m.updateSerial(0, 0)
+# print m.x
+# print m.P
 

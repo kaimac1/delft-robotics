@@ -90,7 +90,6 @@ class Cricket:
 	#Send out a chirp
 	def chirp(self):
 		self.s.write("P CH\r")
-		#time.sleep(0.12)
 
 	#Return the measured distance & ID as a tuple if the cricket has been listening
 	def listen(self):
@@ -101,7 +100,7 @@ class Cricket:
 
 		#Extract the distance from the returned string. Return -1 if no distance reported
 		dist = re.search("DB=(.+?),", rx)
-		if dist:
+		if dist and dist.group(1).isdigit():
 			id = re.search("SP=(.+?),", rx).group(1)
 			return (id, dist.group(1))
 		else:

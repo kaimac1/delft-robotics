@@ -226,3 +226,10 @@ class Plot():
 		y2m = self.y0 - self.ys*(y2-self.ymin)/(self.ymax-self.ymin) + self.ys
 		pygame.draw.aaline(self.screen, pygame.Color(colour), (x1m, y1m), (x2m, y2m))
 		pygame.display.flip()
+
+	def point(self, x1, y1, colour):
+		x1m = self.x0 + self.xs*(x1-self.xmin)/(self.xmax-self.xmin)
+		y1m = self.y0 - self.ys*(y1-self.ymin)/(self.ymax-self.ymin) + self.ys
+		pygame.draw.aaline(self.screen, pygame.Color(colour), (x1m - 2, y1m - 2), (x1m + 2, y1m + 2))
+		pygame.draw.aaline(self.screen, pygame.Color(colour), (x1m - 2, y1m + 2), (x1m + 2, y1m - 2))
+		pygame.display.flip()

@@ -15,7 +15,7 @@ def main():
 
 	#List of hostnames of robots used
 	lab.robots = ["alpha1"]
-	lab.init("sched-random")
+	lab.init("sched-trace")
 
 	#Use crickets in chirp mode
 	cricketList = cricketScan()
@@ -35,9 +35,6 @@ def main():
 	dt = 0.2
 	m = EKFModel(4)
 	def const_velocity(x,u):
-		#return array([x[0] + u[0],
-	#				  x[1] + u[1]]).T
-
 		 return array([x[0] + x[2]*dt + 0.5*dt*dt*u[0],
 		 			 x[1] + x[3]*dt + 0.5*dt*dt*u[1],
 		 			 x[2] + u[0]*dt,
@@ -49,7 +46,7 @@ def main():
 
 	#Cricket locations and measurement equation
 	node_xy = ((-1810, -2080), (-1810, 0), (-1810, 2070), (-890, 3220), (680, 3220), (1630, 2040), (1630, -200), (1630, -2090), (740, -3250), (-870, -3250))
-	node_height = 1300
+	node_height = 1230
 	def h(x, i):
 		return sqrt((x[0] - node_xy[i][0])**2 + (x[1] - node_xy[i][1])**2 + node_height**2)
 
@@ -68,8 +65,12 @@ def main():
 	cy_old = 0
 
 	data = []
+	k = 0
 
 	while True:
+
+		k += 1
+		t = k*dt
 
 		time_start = time.clock()
 		[mx_old, my_old] = [m.x[0], m.x[1]]
@@ -77,12 +78,33 @@ def main():
 		data.append([mx_old, my_old, cx_old, cy_old])
 
 		#Get control input from gamepad & send to robot
-		axes = gamepad.axes()
-		(v, r) = lab.axes2vr(axes)
-		lab.robot["alpha1"].robot.DriveVR(v, r)
+		#axes = gamepad.axes()
+		#(v, r) = lab.axes2vr(axes)
+		#lab.robot["alpha1"].robot.DriveVR(v, r)
+		scale = 4.0
+		v = 250
+		w = -2.405*sin(t/scale)/scale
+		(vl, vr) = lab.vw2lr(v,w)
+		lab.robot["alpha1"].robot.DriveLR(vl, vr)
 
 		#Schedule
-		node = random.randrange(1,11)
+		mintrace = 1e6
+		for j in range(1,11):
+			def hj(x):
+				return h(x, j-1)
+			hx = hj(m.x)
+			if hx > 30:
+				#R = m.R[j-1,j-1] + hx
+				H = m.csdJacobian(hj, m.x)
+				PHT = m.P*(H.T)
+				S = H*PHT + m.R[j-1,j-1]
+				K = PHT / S
+				Pj = (eye(4) - K*H)*m.P
+				if trace(Pj) < mintrace:
+					mintrace = trace(Pj)
+					node = j
+
+		#node = random.randrange(1,11)
 		node_name = "beac_" + str(node)
 
 		#Get measurement
@@ -119,7 +141,7 @@ def main():
 		if key == "q": break
 
 		loop_time = time.clock() - time_start
-		print loop_time, loop_time < dt
+		print loop_time, loop_time < dt, t
 		if loop_time < dt: time.sleep(dt-loop_time)
 
 

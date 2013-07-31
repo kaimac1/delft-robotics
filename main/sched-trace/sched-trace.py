@@ -78,14 +78,14 @@ def main():
 		data.append([mx_old, my_old, cx_old, cy_old])
 
 		#Get control input from gamepad & send to robot
-		#axes = gamepad.axes()
-		#(v, r) = lab.axes2vr(axes)
-		#lab.robot["alpha1"].robot.DriveVR(v, r)
-		scale = 4.0
-		v = 250
-		w = -2.405*sin(t/scale)/scale
-		(vl, vr) = lab.vw2lr(v,w)
-		lab.robot["alpha1"].robot.DriveLR(vl, vr)
+		axes = gamepad.axes()
+		(v, r) = lab.axes2vr(axes)
+		lab.robot["alpha1"].robot.DriveVR(v, r)
+		#scale = 4.0
+		#v = 250
+		#w = -2.405*sin(t/scale)/scale
+		#(vl, vr) = lab.vw2lr(v,w)
+		#lab.robot["alpha1"].robot.DriveLR(vl, vr)
 
 		#Schedule
 		mintrace = 1e6

@@ -105,7 +105,6 @@ class ParticleFilter():
 		w_sum = sum(self.w)
 		for i in range(self.N):
 			self.w[i] = self.w[i] / w_sum
-		print y, p_y_given_x(y, self.x[i])
 
 		#estimate state
 		self.xest = 0
@@ -117,13 +116,13 @@ class ParticleFilter():
 		xnew = []
 		try:
 			idx = random.choice(range(self.N), self.N, replace=True, p=self.w)
+			for i in idx:
+				xnew.append(self.x[i])
+			self.x = xnew
+			for i in range(self.N):
+				self.w[i] = 1.0/self.N
 		except:
-			print self.w
-		for i in idx:
-			xnew.append(self.x[i])
-		self.x = xnew
-		for i in range(self.N):
-			self.w[i] = 1.0/self.N
+			pass
 
 		return self.xest
 

@@ -84,61 +84,52 @@ class EKFModel():
 	def sens(self, x):
 		return array([x[0]])
 
-# #State-space model
-# dt = 0.1
-# m = EKFModel(4)
-# def const_velocity(x,u):
-# 	return array([x[0] + x[2]*dt + 0.5*dt*dt*u[0],
-# 				 x[1] + x[3]*dt + 0.5*dt*dt*u[1],
-# 				 x[2] + u[0]*dt,
-# 				 x[3] + u[1]*dt]).T
-# m.f = const_velocity
-# m.Q = eye(2)*5
-# m.R = eye(10)*0.02
-# m.x = array([0,0,0,0]).T
 
-# #Cricket locations and measurement equation
-# node_xy = ((-13, 104), (-13, 312), (-13, 519), (79, 634), (236, 634), (331, 516), (331, 310), (242, -13), (81, -13))
-# node_height = 153
-# def sq(x, i):
-# 	return sqrt((x[0] - node_xy[i][0])**2 + (x[1] - node_xy[i][1])**2 + node_height**2)
+class ParticleFilter():
+	def __init__(self, N, x0_sample, f, w_sample):
+		self.x = []
+		self.w = []
+		self.N = N
+		self.f = f
+		self.w_sample = w_sample
+		#Create initial distribution of particles
+		for i in range(self.N):
+			self.x.append(x0_sample())
+			self.w.append(1.0/N)
 
-# while True:
-# 	m.predict([0,0])
-# 	def hn(x):
-# 		return sq(x, 5)
-# 	m.h = hn
-# 	m.updateSerial(5,5)
-# 	print m.x
+	def predict_update(self, y, p_y_given_x):
+		for i in range(self.N):
+			self.x[i] = self.f(self.x[i], self.w_sample())
+			self.w[i] *= p_y_given_x(y, self.x[i])
 
-# dt = 0.1
-# def constant_velocity(x, u):
-# 	return array([x[0] + u[0]*dt/2*(cos(x[2]+u[1]*dt) + cos(x[2])),
-# 			  	  x[1] + u[0]*dt/2*(sin(x[2]+u[1]*dt) + sin(x[2])),
-# 			  	  x[2] + u[1]*dt]).T
+		w_sum = sum(self.w)
+		for i in range(self.N):
+			self.w[i] = self.w[i] / w_sum
+		print y, p_y_given_x(y, self.x[i])
 
-# m = EKFModel(3)
-# m.dt = 0.1
-# m.f = constant_velocity
-# m.h = m.sens
-# m.Q = eye(2)*4
-# m.x = array([0,0,0]).T
-# m.u = array([0,0])
-# N = int(6.28/m.dt)
-# data = zeros([3, N])
+		#estimate state
+		self.xest = 0
+		for i in range(self.N):
+			self.xest += self.w[i]*self.x[i]
 
-# for k in range(N):
-# 	t = k*m.dt
-# 	data[:, k] = mat(m.x).T
-# 	m.predict([1,2.405*sin(t)])
+		#N_eff = 1.0/w_sum
+		#resample
+		xnew = []
+		try:
+			idx = random.choice(range(self.N), self.N, replace=True, p=self.w)
+		except:
+			print self.w
+		for i in idx:
+			xnew.append(self.x[i])
+		self.x = xnew
+		for i in range(self.N):
+			self.w[i] = 1.0/self.N
 
-# print m.x
-# m.updateSerial(0, 0)
-# print m.x
-# m.predict([1,1])
-
-# pyplot.plot(data[0,:].T, data[1,:].T, 'r')
-# pyplot.show()
+		return self.xest
 
 
 
+def normpdf(x, mu, sigma):
+	u = float((x-mu) / abs(sigma))
+	y = exp(-u*u/2) / (sqrt(2*pi) * abs(sigma))
+	return y
